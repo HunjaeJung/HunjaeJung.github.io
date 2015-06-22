@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+	<meta charset="utf-8">
+	<title>Brief Introdunction of Neo4j — 그냥 하자</title>
+	<meta name="description" content="Title: Brief Introdunction of Neo4j; Date: 2015-03-23; Author: hunjae">
+	<meta name="author" content="hunjae">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+	<!--[if lt IE 9]>
+		<script src="./theme/html5.js"></script>
+		<![endif]-->
+	<link href="./theme/css/ipython.css" rel="stylesheet">
+	<link href="./theme/images/favicon.ico" rel="shortcut icon">
+	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/styles/default.min.css">
+	<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/highlight.min.js"></script>
+	<!--
+	<link href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
+	<link href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+	<link href="//maxcdn.bootstrapcdn.com/bootswatch/3.2.0/simplex/bootstrap.min.css" rel="stylesheet">
+	-->
+	<link href="./theme/css/local.css" rel="stylesheet">
+	<link href="./theme/css/pygments.css" rel="stylesheet">
+	<script type="text/javascript"  src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</head>
+<body>
+<div class="container">
+	<div class="page-header">
+		<a class="page-header-title" href=".">
+		<img width="240" src="./theme/images/shark.png"/>
+			<div class="main-title">그냥 하자</div>
+		</a>
+		<div class="sub-title">Rampant desire of expression and classification</div>
+        <div class="project_bar">
+            <img class="circular size60" src="./theme/images/hunjae.jpg"/>
+        </div>
+	</div>
+	<div class="row">
+		<div class="col-md-8 col-md-offset-2">
+<div class="article" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="text-center article-header">
+		<h1 itemprop="name headline" class="article-title">Brief Introdunction of Neo4j</h1>
+		<time datetime="2015-03-23T00:00:00+01:00" itemprop="datePublished">Written 150323</time>
+ 
+		<div>
+			Tags:
+			<span itemprop="keywords">
+				<a href="./tag/neo4j.html" rel="tag">Neo4j</a>
+			</span>
+		</div>
+	</div>
+	<div itemprop="articleBody" class="article-body"><ol>
+<li>
+<p>Graph database 
+    일단 <strong>그래프 데이터베이스</strong>는 말 그대로 <strong>그래프 자료구조</strong>를 기반으로 한 데이터 베이스입니다. 그래프는 Node와 Edge로 이루어졌으며, Node는 대상이나 개체를, Edge는 Node들 간의 관계를 나타냅니다. 그래프 데이터 베이스로 가장 잘 알려진 것은 <a href="neo4j.com">neo4j</a>인데, 그 사용법에 대해 차근차근 알아가봅시다. </p>
+</li>
+<li>
+<p>Getting started
+    일단 <a href="http://neo4j.com/download/">neo4j를 다운</a>받습니다. 그 다음 압축을 풀고, terminal에서 /bin/neo4j start를 실행합니다. 그리고 <a href="http://localhost:7474">http://localhost:7474</a>로 접속해봅시다. 뭔가 멋진 것들이 뜨는데, 이곳에 있는 console에 쿼리를 날려 DB를 생성/수정/검색할 수 있습니다. 쿼리는 Cypher라는 neo4j에서 전용 쿼리 langauge를 사용합니다.</p>
+</li>
+<li>
+<p>Cypher language example
+    <img alt="relation" src="https://static.versal.com/restapi/assets/d582c924-34b2-42b3-b892-6e97b939489a" /></p>
+<p>아래는 Matrix 영화에 출연한 모든 배우들을 찾기 위한 쿼리입니다.</p>
+<p>```
+MATCH (movie:Movie)&lt;-[role:ACTED_IN]-(actor:Person)
+WHERE movie.title="The Matrix"
+RETURN role.roles, actor.name</p>
+<p>Label=&gt; ':Person', ':Movie'
+Relationship=&gt; ':ACTED_IN'
+Property=&gt; '.title, '.role', '.name'
+Identifier=&gt; 'movie', 'role', 'actor'
+Value=&gt; 'The Matrix'
+```</p>
+<p>모든 데이터를 지우기 위해서는 아래와 같은 쿼리를 날립니다.</p>
+<p><code>MATCH (n)
+OPTIONAL MATCH (n)-[r]-()
+DELETE n,r</code></p>
+</li>
+<li>
+<p>참고 사이트</p>
+<ul>
+<li><a href="http://www.seenickcode.com/switching-from-mongodb-to-neo4j/#enterneo4j">Entering Neo4j story</a>: Shindig이라는 음료수 공유 SNS를 만드는 스타트업인데, 처음엔 Postgres로 시작해서-&gt;MongoDB/ElasticSearch-&gt;Neo4j로 갈아탄 행적을 보여줍니다.</li>
+<li><a href="https://github.com/VeliovGroup/Meteor-Leaderboard-Neo4j">Meteor + Neo4j Leaderboard Example</a> </li>
+<li><a href="http://addisonlee.azurewebsites.net/neo4j-vs-mysql-vs-mongodb/">MySQL vs MongoDB vs Neo4j</a> </li>
+</ul>
+</li>
+</ol></div>
+	<hr>
+	<h2>Comments</h2>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'hunjae'; 
+    var disqus_title = 'Brief Introdunction of Neo4j';
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+		</div>
+	</div> 	<!-- <hr> -->
+</div> <!-- /container -->
+
+<div class="container">
+	<div class="row">
+		<div class="col-md-12 text-center center-block aw-bottom">
+			<p>&copy; <a href="./authors.html">hunjae</a> 2014, powered by <a href="http://docs.getpelican.com/en/3.4.0/">Pelican</a>, hosted by <a href="https://github.com/HunjaeJung/HunjaeJung.github.io">Github</a></p>
+		</div>
+	</div>
+</div>
+<!-- JavaScript -->
+<script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+<!--
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+-->
+<script type="text/javascript">
+jQuery(document).ready(function($) {
+	$("div.collapseheader").click(function () {
+		$header = $(this).children("span").first();
+		$codearea = $(this).children(".input_area");
+		$codearea.slideToggle(500, function () {
+			$header.text(function () {
+				return $codearea.is(":visible") ? "Collapse Code" : "Expand Code";
+			});
+		});
+	});
+});
+</script>
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+ })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-55737841-1', 'auto');
+ga('send', 'pageview');
+</script>
+ 
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+	<meta charset="utf-8">
+	<title>[Project] Mobile App Search Engine by Using Deeplink — 그냥 하자</title>
+	<meta name="description" content="Title: [Project] Mobile App Search Engine by Using Deeplink; Date: 2015-02-15; Author: hunjae">
+	<meta name="author" content="hunjae">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+	<!--[if lt IE 9]>
+		<script src="./theme/html5.js"></script>
+		<![endif]-->
+	<link href="./theme/css/ipython.css" rel="stylesheet">
+	<link href="./theme/images/favicon.ico" rel="shortcut icon">
+	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/styles/default.min.css">
+	<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/highlight.min.js"></script>
+	<!--
+	<link href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
+	<link href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+	<link href="//maxcdn.bootstrapcdn.com/bootswatch/3.2.0/simplex/bootstrap.min.css" rel="stylesheet">
+	-->
+	<link href="./theme/css/local.css" rel="stylesheet">
+	<link href="./theme/css/pygments.css" rel="stylesheet">
+	<script type="text/javascript"  src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</head>
+<body>
+<div class="container">
+	<div class="page-header">
+		<a class="page-header-title" href=".">
+		<img width="240" src="./theme/images/shark.png"/>
+			<div class="main-title">그냥 하자</div>
+		</a>
+		<div class="sub-title">Rampant desire of expression and classification</div>
+        <div class="project_bar">
+            <img class="circular size60" src="./theme/images/hunjae.jpg"/>
+        </div>
+	</div>
+	<div class="row">
+		<div class="col-md-8 col-md-offset-2">
+<div class="article" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="text-center article-header">
+		<h1 itemprop="name headline" class="article-title">[Project] Mobile App Search Engine by Using Deeplink</h1>
+		<time datetime="2015-02-15T00:00:00+01:00" itemprop="datePublished">Written 150215</time>
+ 
+		<div>
+			Tags:
+			<span itemprop="keywords">
+				<a href="./tag/deeplink.html" rel="tag">Deeplink</a>
+			</span>
+			<span itemprop="keywords">
+				<a href="./tag/search-engine.html" rel="tag">search engine</a>
+			</span>
+		</div>
+	</div>
+	<div itemprop="articleBody" class="article-body"><p>2015년 1월부터 시작하게 된 <strong>모바일 앱 검색엔진</strong>. 현재 검색엔진들이 웹에서 모든 정보를 긁어오고 있는 반면, 모바일 어플리케이션 내부 정보들은 긁어오지 못하고 있다. 모바일에서 생산되는 정보의 양이 점점 늘어남에 따라 검색엔진들은 위기를 느끼기 시작하였고, 이에 국내 검색엔진들은 어플리케이션사의 데이터베이스를 직접 요청하기에 이르렀다.(아마 구글이나 중국의 바이두도 다르지 않을 것이라 본다.) 하지만 어플리케이션사는 현재 정보가 웹 중심인 검색엔진에서 본인들의 어플리케이션이 얼마나 검색 결과의 상단에 노출될지 의심스러워, 함부로 <strong>자신들의 값 비싼 자산인 데이터베이스</strong>를 넘기지 않는다. </p>
+<p>하지만 분명 기회는 있다. <strong>어플리케이션사</strong>는 본인들의 어플리케이션을 자연스럽게 홍보할만한 적절한 플랫폼이 필요하며, <strong>검색엔진</strong>은 이에 따른 트래픽을 언제나 필요로하며, <strong>사용자들</strong>은 어플리케이션을 굳이 다운받지 않고도 어떤 어플리케이션인지 알고 싶어한다.(현재 앱스토어나 마켓에서 제공되는 스크린샷과 설명들은 정보가 너무 부족하다! 앱 받았다가 지운 것이 한 두번인가!)</p>
+<p>언제나 문제는 고객(사람)으로부터 발생한다. 우리가 하고자 하는 일은 사용자가 <strong>모바일에서 앱 내 정보를 검색할 수 있게하고, 딥 링크를 통해 어플리케이션의 특정 페이지로 꽂아주는 일이다.</strong> 자 그러면 우리가 개발해야할 스코프가 나온다. 일단 기획의 범위는 우리가 데이터베이스를 요구하지 않아도 정보를 가져올 수 있는 <strong>음악</strong>로 한정짓는다. </p>
+<ol>
+<li>
+<p>Step One: 우리는 어플리케이션에게 데이터베이스를 요구할만한 짬밥이 되지 않는다. 우리가 가진 정보를 최대한 활용하여 응용프로그램이 어떻게 동작할 수 있는지 보여주는 수밖에 없다. </p>
+<ul>
+<li>'음악 정보' 데이터베이스가 변경되면, 항상 크롤링해야할 사이트들에서 크롤링을 한다.</li>
+<li>특정 '어플리케이션'에도 특정 '음악 정보'가 있으면, '연결 정보' 테이블에 '음악 정보의 Song ID'와 '어플리케이션의 Track ID'를 밀어넣고, 자동으로 Elastic search에 인덱싱해둔다.</li>
+<li>자 그러면 이제, 사용자가 우리의 검색 엔진에서 검색어를 넣었을 때, Elastic search에 가서 음악 정보에 대한 Song ID를 받아오고, Song ID를 가지고 '연결 정보' 테이블로 가서 그 노래를 가지고 있는 어플리케이션의 링크를 가져오면 끝이다!</li>
+<li>'음악 정보' 데이터베이스 항상 최신화. 이게 조금 성가신게 음악은 계속해서 추가된다. 현재로써 우리에게 최신 음악 데이터베이스 밀어 넣어줄만한 곳이 없으니, 알아서 찾아와야 한다.</li>
+</ul>
+</li>
+<li>
+<p>Step Two: 어느 정도 완성한 프로토타입을 가지고, 어플리케이션사의 데이터베이스를 요구하고 계속해서 서비스를 발전시켜나간다. </p>
+<ul>
+<li>우리의 프로토타입은 (적어도 내가 볼땐) 네이버나 구글, 다음에서 탐낼만한 서비스이다. 헌데 아직은 눈치만 있다면 누구나 할 수 있는 작업들이다.</li>
+<li>경쟁력을 위해 딥 링크를 구현하고 있는 서비스를 빠르게 알아내고, (예를 들어, <strong>크롬 익스텐션</strong>으로 Play 버튼이나 어떤 액션에 대하여 리턴되는 링크 바로 받아오기.)</li>
+<li>딥 링크를 구현하고 있지 않는 서비스들에게 딥 링크를 쉽게 구현할 수 있는 API를 제공한다.</li>
+</ul>
+</li>
+<li>
+<p>궁금한 점</p>
+<ul>
+<li>어플리케이션사는 사용자 경험을 처음 랜딩 페이지부터 디자인하게 된다. 과연 딥링크는 유용할 수 있을 것인가?</li>
+<li>차라리 애플이나 구글에서 움직이는 것이 가장 좋은 방법아닌가? 왜 구글은 효율적으로 움직이지 않고 있는가?</li>
+</ul>
+</li>
+</ol></div>
+	<hr>
+	<h2>Comments</h2>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'hunjae'; 
+    var disqus_title = '[Project] Mobile App Search Engine by Using Deeplink';
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+		</div>
+	</div> 	<!-- <hr> -->
+</div> <!-- /container -->
+
+<div class="container">
+	<div class="row">
+		<div class="col-md-12 text-center center-block aw-bottom">
+			<p>&copy; <a href="./authors.html">hunjae</a> 2014, powered by <a href="http://docs.getpelican.com/en/3.4.0/">Pelican</a>, hosted by <a href="https://github.com/HunjaeJung/HunjaeJung.github.io">Github</a></p>
+		</div>
+	</div>
+</div>
+<!-- JavaScript -->
+<script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+<!--
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+-->
+<script type="text/javascript">
+jQuery(document).ready(function($) {
+	$("div.collapseheader").click(function () {
+		$header = $(this).children("span").first();
+		$codearea = $(this).children(".input_area");
+		$codearea.slideToggle(500, function () {
+			$header.text(function () {
+				return $codearea.is(":visible") ? "Collapse Code" : "Expand Code";
+			});
+		});
+	});
+});
+</script>
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+ })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-55737841-1', 'auto');
+ga('send', 'pageview');
+</script>
+ 
+</body>
+</html>

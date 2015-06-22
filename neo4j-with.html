@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+	<meta charset="utf-8">
+	<title>Neo4j 'WITH' — 그냥 하자</title>
+	<meta name="description" content="Title: Neo4j 'WITH'; Date: 2015-03-31; Author: hunjae">
+	<meta name="author" content="hunjae">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+	<!--[if lt IE 9]>
+		<script src="./theme/html5.js"></script>
+		<![endif]-->
+	<link href="./theme/css/ipython.css" rel="stylesheet">
+	<link href="./theme/images/favicon.ico" rel="shortcut icon">
+	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/styles/default.min.css">
+	<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/highlight.min.js"></script>
+	<!--
+	<link href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
+	<link href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+	<link href="//maxcdn.bootstrapcdn.com/bootswatch/3.2.0/simplex/bootstrap.min.css" rel="stylesheet">
+	-->
+	<link href="./theme/css/local.css" rel="stylesheet">
+	<link href="./theme/css/pygments.css" rel="stylesheet">
+	<script type="text/javascript"  src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</head>
+<body>
+<div class="container">
+	<div class="page-header">
+		<a class="page-header-title" href=".">
+		<img width="240" src="./theme/images/shark.png"/>
+			<div class="main-title">그냥 하자</div>
+		</a>
+		<div class="sub-title">Rampant desire of expression and classification</div>
+        <div class="project_bar">
+            <img class="circular size60" src="./theme/images/hunjae.jpg"/>
+        </div>
+	</div>
+	<div class="row">
+		<div class="col-md-8 col-md-offset-2">
+<div class="article" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="text-center article-header">
+		<h1 itemprop="name headline" class="article-title">Neo4j 'WITH'</h1>
+		<time datetime="2015-03-31T00:00:00+02:00" itemprop="datePublished">Written 150331</time>
+ 
+		<div>
+			Tags:
+			<span itemprop="keywords">
+				<a href="./tag/neo4j.html" rel="tag">Neo4j</a>
+			</span>
+		</div>
+	</div>
+	<div itemprop="articleBody" class="article-body"><p><img alt="cypher-with-graph.svg" src="http://neo4j.com/docs/stable/images/cypher-with-graph.svg" /></p>
+<p>아래의 쿼리는 위의 관계도를 만드는 Cypher 쿼리입니다.</p>
+<div class="highlight"><pre>create (_0 {`name`:&quot;David&quot;})
+create (_1 {`name`:&quot;Emil&quot;})
+create (_2 {`name`:&quot;Anders&quot;})
+create (_3 {`name`:&quot;Bossman&quot;})
+create (_4 {`name`:&quot;Ceasar&quot;})
+create _0-[:`KNOWS`]-&gt;_2
+create _2-[:`KNOWS`]-&gt;_3
+create _2-[:`BLOCKS`]-&gt;_4
+create _3-[:`KNOWS`]-&gt;_1
+create _3-[:`BLOCKS`]-&gt;_0
+create _4-[:`KNOWS`]-&gt;_1
+</pre></div>
+
+
+<hr />
+<p>오늘의 주제는 WITH의 사용법이고, WITH 절을 어떻게 사용하는지 케이스 바이 케이스로 살펴보겠습니다. 먼저 WITH: Filter on aggregate function results에 대한 이야기입니다. 위와 같은 관계도가 있을 때, David에 연결된 사람 중 2명 이상 아는 사람을 찾아오고 싶습니다. 그럴땐 아래와 같은 코드를 사용하면 됩니다. </p>
+<div class="highlight"><pre>MATCH (david { name: &quot;David&quot; })--(otherPerson)--&gt;()
+WITH otherPerson, count(*) AS foaf
+WHERE foaf &gt; 1
+RETURN otherPerson
+</pre></div>
+
+
+<p>라인 by 라인 설명하겠습니다.</p>
+<ol>
+<li>
+<p><strong>MATCH (david { name: "David" })--(otherPerson)--&gt;()</strong>: --는 -[]-와 동일합니다. 즉 어떤 edge든 상관없이 관계된 노드를 가르키게 됩니다. 그렇게 david 노드와 연결된 노드(여기선 otherPerson이라고 임의로 명명했습니다.)라면 모두 가져오고, otherPerson 노드에서는 --&gt; 관계로 나가는 노드들을 가져오는 것이지요. 그림을 보시면 아시겠지만, otherPerson 노드는 Anders와 Bossman이 걸리고, 그 노드들로부터 --&gt; 관계에 있는 노드까지는 아래와 같이 총 3가지 Path가 존재합니다. </p>
+<ul>
+<li>David--Anders--&gt;Ceaser</li>
+<li>David--Anders--&gt;Bossman</li>
+<li>David--Bossman--&gt;David</li>
+</ul>
+</li>
+<li>
+<p><strong>WITH otherPerson, count(*) AS foaf</strong>: 오늘의 주제인 WITH 절 입니다. WITH 절로 otherPerson 노드를 가지고 놀 수 있습니다. 현재 우리는 1번 쿼리문을 통해 3개의 Path를 가지고 있습니다. 그렇기 때문에 otherPerson 포지션에도 3개의 노드가 들어오게 됩니다. 바로 Anders / Anders / Bossman. <code>MATCH (david { name: "David" })--(otherPerson)--&gt;() RETURN otherPerson;</code> 쿼리를 먼저 날려보세요. Anders가 한 개가 아닌 것을 볼 수 있습니다. 여기서 count(*)를 날리면, Cypher는 같은 노드를 기준으로 path수를 세게 됩니다. 결과적으로 Anders path 2개, Bossman path 1개를 찾게 되지요.</p>
+</li>
+<li>
+<p><strong>WHERE foaf &gt; 1 RETURN otherPerson</strong>: 그렇게 찾은 path 개수가 1개보다 많은 otherPerson 노드를 리턴하라는 이야기입니다. 2개의 path를 가지고 있는 Anders가 되겠지요. 만약 <code>foaf = 1</code>로 바꾸게 되면, Bossman 노드를 리턴하게 됩니다.</p>
+</li>
+</ol>
+<hr />
+<p>두번째, WITH: Sort results before using collect on them에 대한 이야기</p>
+<div class="highlight"><pre>MATCH (n)
+WITH n
+ORDER BY n.name DESC LIMIT 3
+RETURN collect(n.name)
+</pre></div>
+
+
+<ol>
+<li><strong>MATCH (n)</strong>: 어떤 노드든 쿼리의 대상입니다.</li>
+<li><strong>WITH n</strong>: 그 노드들을 가지고,</li>
+<li><strong>ORDER BY n.name DESC LIMIT 3</strong>: 노드의 name을 기준으로 desc순 정렬하는데, 3개만 위에서 가져옵니다. (이때 주의할 점은 node 중 name 속성이 없는 녀석들이 가장 먼저 나온다는 점 입니다.)</li>
+<li><strong>RETURN collect(n.name)</strong>: 노드의 name을 묶어서 RETURN 합니다.</li>
+</ol>
+<hr />
+<p>세번째, WITH: Limit branching of your path search에 대한 이야기</p>
+<div class="highlight"><pre>MATCH (n { name: &quot;Anders&quot; })--(m)
+WITH m
+ORDER BY m.name DESC LIMIT 1
+MATCH (m)--(o)
+RETURN o.name
+</pre></div>
+
+
+<ol>
+<li><strong>MATCH (n { name: "Anders" })--(m)</strong>: (Anders 노드) -- (아무 노드) path 들을 대상</li>
+<li><strong>WITH m</strong>: Anders노드와 연결된 노드 m을 가지고 </li>
+<li><strong>ORDER BY m.name DESC LIMIT 1</strong>: 이름 가장 뒤에 있는 녀석</li>
+<li><strong>MATCH (m)--(o)</strong>: (그 녀석 노드) -- (아무 노드) path 들을 대상</li>
+<li><strong>RETURN o.name</strong>: 최종적으로, (Anders 노드)와 (연결된 노드) 중 (이름 가장 뒤에 있는 녀석)과 (-- 관계있는 녀석들)의 이름을 리턴.</li>
+</ol></div>
+	<hr>
+	<h2>Comments</h2>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'hunjae'; 
+    var disqus_title = 'Neo4j 'WITH'';
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+		</div>
+	</div> 	<!-- <hr> -->
+</div> <!-- /container -->
+
+<div class="container">
+	<div class="row">
+		<div class="col-md-12 text-center center-block aw-bottom">
+			<p>&copy; <a href="./authors.html">hunjae</a> 2014, powered by <a href="http://docs.getpelican.com/en/3.4.0/">Pelican</a>, hosted by <a href="https://github.com/HunjaeJung/HunjaeJung.github.io">Github</a></p>
+		</div>
+	</div>
+</div>
+<!-- JavaScript -->
+<script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+<!--
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+-->
+<script type="text/javascript">
+jQuery(document).ready(function($) {
+	$("div.collapseheader").click(function () {
+		$header = $(this).children("span").first();
+		$codearea = $(this).children(".input_area");
+		$codearea.slideToggle(500, function () {
+			$header.text(function () {
+				return $codearea.is(":visible") ? "Collapse Code" : "Expand Code";
+			});
+		});
+	});
+});
+</script>
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+ })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-55737841-1', 'auto');
+ga('send', 'pageview');
+</script>
+ 
+</body>
+</html>

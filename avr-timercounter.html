@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+	<meta charset="utf-8">
+	<title>[AVR] Timer/Counter — 그냥 하자</title>
+	<meta name="description" content="Title: [AVR] Timer/Counter; Date: 2014-10-03; Author: hunjae">
+	<meta name="author" content="hunjae">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+	<!--[if lt IE 9]>
+		<script src="./theme/html5.js"></script>
+		<![endif]-->
+	<link href="./theme/css/ipython.css" rel="stylesheet">
+	<link href="./theme/images/favicon.ico" rel="shortcut icon">
+	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/styles/default.min.css">
+	<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/highlight.min.js"></script>
+	<!--
+	<link href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
+	<link href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+	<link href="//maxcdn.bootstrapcdn.com/bootswatch/3.2.0/simplex/bootstrap.min.css" rel="stylesheet">
+	-->
+	<link href="./theme/css/local.css" rel="stylesheet">
+	<link href="./theme/css/pygments.css" rel="stylesheet">
+	<script type="text/javascript"  src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</head>
+<body>
+<div class="container">
+	<div class="page-header">
+		<a class="page-header-title" href=".">
+		<img width="240" src="./theme/images/shark.png"/>
+			<div class="main-title">그냥 하자</div>
+		</a>
+		<div class="sub-title">Rampant desire of expression and classification</div>
+        <div class="project_bar">
+            <img class="circular size60" src="./theme/images/hunjae.jpg"/>
+        </div>
+	</div>
+	<div class="row">
+		<div class="col-md-8 col-md-offset-2">
+<div class="article" itemscope itemtype="http://schema.org/BlogPosting">
+	<div class="text-center article-header">
+		<h1 itemprop="name headline" class="article-title">[AVR] Timer/Counter</h1>
+		<time datetime="2014-10-03T00:00:00+02:00" itemprop="datePublished">Written 141003</time>
+ 
+		<div>
+			Tags:
+			<span itemprop="keywords">
+				<a href="./tag/avr.html" rel="tag">AVR</a>
+			</span>
+		</div>
+	</div>
+	<div itemprop="articleBody" class="article-body"><div class="highlight"><pre>AVR은 어떻게 시간을 잴까? delay_ms(1000)함수는 어떻게 1초가 지난 것을 알까?
+</pre></div>
+
+
+<ol>
+<li>
+<p>AVR에는 전원만 인가되면 무조건 정해진 주기마다 뛰는 오실레이터가 있다. (보통 칩 내부에 있는데, 칩 내부에 있는 오실레이터는 8MHz를 넘기 어려워서 보드에 달아주기도 한다. 아두이노 우노의 경우 16MHz짜리 오실레이터가 박혀있다.) </p>
+</li>
+<li>
+<p>16MHz로 가정하자. 그러면 1/16 usec(마이크로 second, \( {10}^{6} \) 마다 한번씩 신호를 주는거다. 이 신호가 올때마다 레지스터에 이때까지 몇번 왔는지 기록한다. 만약 레지스터가 좀 작아서, 최대 16번까지만 기록할 수 있으면(4bit 레지스터) 1usec만 셀수있는거다. 1/16 usec마다 신호가 오는데, 16번 지났으니까 1 usec가 지난거다. AVR이 보통 가지고 있는 레지스터는 8bit, 256번까지 기록하라 수 있는 레지스터다. (Interrupt의 종류엔 Overflow Interrupt와 Output Compare Interrupt 두가지가 있는데, 우선 Overflow 기준으로 설명한다. Overflow는 레지스터가 1111 1111에서 +1이 되어 0000 0000이 되는 순간을 말한다.)</p>
+</li>
+<li>
+<p>그러면 8bit 레지스터는 1/16 * 256 = 16 usec 지난것만 알 수 있다. 그런데 만약 1msec 지난 것을 알고 싶다면? 레지스터를 늘리던, 꼼수를 쓰던 해야한다. 그 꼼수가 바로 prescaler. 그것의 정체는 하드웨어였다.</p>
+<p><img alt="Prescaler" src="http://www.qsl.net/n/n9zia//wireless/pics/prescaler-1.png" title="=400x280" /></p>
+<p>일단 1msec를 세기위해서, 클럭을 좀 느린 것처럼 만드는 것이다. 예를들어 16MHz에 prescaler 1/64를 씌우면, 0.25MHz가 된다. 이렇게 되면 4 usec마다 신호가 들어오니까, 레지스터에 250번 신호가 들어오면 1msec(4usec*250 = 1000usec = 1msec)가 된 것이다.     TCCR(Timer Count Control Register) 레지스터에 Prescaler 값을 정하는 bit가 있는데, atmega328p(아두이노 우노)의 경우 0 &lt;&lt; CS02 | 1 &lt;&lt; CS01 | 1 &lt;&lt; CS00 로 세팅하면 1/64 prescaler가 동작하게 된다.</p>
+</li>
+<li>
+<p>정리해보자. AVR에 전원이 인가되면 오실레이터가 주기적으로 신호를 발생하고, 신호가 발생될때마다 TCNT0 레지스터에 +1씩 증가된다. 그런데 TCNT0가 8bit여서 256개만 카운트할 수 있기 때문에, 이 신호가 좀 늦게와주면 더 오랜 시간을 잴 수 있을 것 같다. 이때 prescaler란 하드웨어로 신호 발생 주기를 바꿀 수 있는 것이다.</p>
+</li>
+<li>
+<p>마지막으로 예제 코드를 참고하자. avr-gcc로 돌아가는 atmega328p용 코드이다.          </p>
+</li>
+</ol>
+<div class="highlight"><pre><span class="cp">#include &lt;avr/io.h&gt;</span>
+<span class="cp">#include &lt;avr/signal.h&gt;</span>
+<span class="cp">#include &lt;avr/interrupt.h&gt;</span>
+
+<span class="c1">// PF0 ~ PF7은 61 ~ 54번 핀</span>
+<span class="cp">#define DDR_LED     DDRD</span>
+<span class="cp">#define PORT_LED    PORTD</span>
+<span class="cp">#define PIN_LED     PIND</span>
+
+<span class="cp">#define CPU_CLOCK   16000000    </span><span class="c1">//16M</span>
+<span class="cp">#define TICKS_PER_SEC   1000        </span><span class="c1">//나는 지금 1초에 1000번의 틱을 만들고 싶다. 이말인 즉슨, 1/1000초에 1번의 틱(=interrupt)이 발생한단 말이다!</span>
+
+<span class="cp">#define DDR_LED   DDRD </span><span class="c1">//_SFR_IO8(0x0A) 이렇게 주소값임</span>
+<span class="cp">#define PORT_LED  PORTD</span>
+<span class="cp">#define PIN_LED   PIND</span>
+
+<span class="c1">// 전역 변수 선언, avr-gcc 전역변수에선 반드시 volatile을 선언해야한다!</span>
+<span class="k">volatile</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">tic_time</span><span class="p">;</span>
+
+<span class="c1">// timer0가 오버플로우되면 호출되는 함수 (1msec 마다 호출된다! TICKS_PER_SEC가 1000이기 때문에)</span>
+<span class="n">ISR</span><span class="p">(</span><span class="n">TIMER0_OVF_vect</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">tic_time</span><span class="o">++</span><span class="p">;</span> <span class="c1">//1ms마다 tic_time++</span>
+
+    <span class="c1">// timer 시작 값 초기화, 1/CPU_CLOCK * 64 * n = 1/1000 sec</span>
+    <span class="n">TCNT0</span> <span class="o">=</span> <span class="mi">256</span> <span class="o">-</span> <span class="p">(</span><span class="n">CPU_CLOCK</span> <span class="o">/</span> <span class="n">TICKS_PER_SEC</span> <span class="o">/</span> <span class="mi">64</span><span class="p">);</span>
+    <span class="c1">// Output compare match mode 일땐 자동으로 Clear 시킬수 있으니까 초기화 안시켜도 됨.</span>
+<span class="p">}</span>
+
+<span class="c1">// ms단위의 delay함수</span>
+<span class="kt">void</span> <span class="n">delay_ms</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">msec</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">tic_time</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+    <span class="k">while</span> <span class="p">(</span><span class="n">msec</span> <span class="o">&gt;</span> <span class="n">tic_time</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">led_status</span> <span class="o">=</span> <span class="mh">0xFF</span><span class="p">;</span> <span class="c1">//출력 off</span>
+
+    <span class="n">DDR_LED</span> <span class="o">=</span> <span class="mh">0xFF</span><span class="p">;</span>     <span class="c1">// LED 포트를 출력 모드(=1)로 설정</span>
+    <span class="n">PORT_LED</span> <span class="o">=</span> <span class="mh">0xFF</span><span class="p">;</span>    <span class="c1">// LED 포트 초기화</span>
+
+    <span class="c1">// 1. Register 세팅</span>
+    <span class="n">TCCR0A</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;&lt;</span> <span class="n">WGM01</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;&lt;</span> <span class="n">WGM00</span><span class="p">);</span> <span class="c1">//Waveform Generation: Normal (Overflow 타이밍에 관련된)</span>
+    <span class="c1">//WGM00: 앞에 0은 타이머/카운터0 (4개니까 0~3), 뒤에 0은 WGM01과 함께 2비트 (4가지 경우)</span>
+
+    <span class="n">TCCR0B</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;&lt;</span> <span class="n">CS02</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">CS01</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">CS00</span><span class="p">);</span> <span class="c1">// prescler 1/64</span>
+    <span class="n">TCNT0</span> <span class="o">=</span> <span class="mi">256</span> <span class="o">-</span> <span class="p">(</span><span class="n">CPU_CLOCK</span> <span class="o">/</span> <span class="n">TICKS_PER_SEC</span> <span class="o">/</span> <span class="mi">64</span><span class="p">);</span><span class="c1">// timer 시작값 초기화</span>
+    <span class="n">TIMSK0</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;&lt;</span> <span class="n">OCIE0A</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;&lt;</span> <span class="n">OCIE0B</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">TOIE0</span><span class="p">);</span> <span class="c1">//output compare interrupt가 아니기 떄문에 OCIE0A,0B 모두 0으로 set. 오버플로우 인터럽트를 사용할 것이므로 TOIE0을 1로 set. (TOIE0를 1로 세팅한다는 이야기는 활성화하겠다는 이야기!)</span>
+    <span class="n">TIFR0</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">TOV0</span><span class="p">)</span> <span class="p">;</span>   <span class="c1">//Overflow interrupt set이긴 한데, 아직 역할이 규명되지 않음. </span>
+
+    <span class="c1">// 2. 이제부터 인터럽트를 허용한다!</span>
+    <span class="n">sei</span><span class="p">();</span>
+
+    <span class="c1">// 3. 1초 마다 LED toggle</span>
+    <span class="k">for</span> <span class="p">(;;)</span>
+    <span class="p">{</span>
+        <span class="c1">// LED를 toggle</span>
+        <span class="n">led_status</span> <span class="o">=</span> <span class="o">~</span><span class="n">led_status</span><span class="p">;</span>
+        <span class="n">PORT_LED</span> <span class="o">=</span> <span class="n">led_status</span><span class="p">;</span>
+
+        <span class="c1">// 1000ms = 1초 기다림</span>
+        <span class="n">delay_ms</span><span class="p">(</span><span class="mi">1000</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+ <span class="p">}</span>
+</pre></div></div>
+	<hr>
+	<h2>Comments</h2>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'hunjae'; 
+    var disqus_title = '[AVR] Timer/Counter';
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+		</div>
+	</div> 	<!-- <hr> -->
+</div> <!-- /container -->
+
+<div class="container">
+	<div class="row">
+		<div class="col-md-12 text-center center-block aw-bottom">
+			<p>&copy; <a href="./authors.html">hunjae</a> 2014, powered by <a href="http://docs.getpelican.com/en/3.4.0/">Pelican</a>, hosted by <a href="https://github.com/HunjaeJung/HunjaeJung.github.io">Github</a></p>
+		</div>
+	</div>
+</div>
+<!-- JavaScript -->
+<script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+<!--
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+-->
+<script type="text/javascript">
+jQuery(document).ready(function($) {
+	$("div.collapseheader").click(function () {
+		$header = $(this).children("span").first();
+		$codearea = $(this).children(".input_area");
+		$codearea.slideToggle(500, function () {
+			$header.text(function () {
+				return $codearea.is(":visible") ? "Collapse Code" : "Expand Code";
+			});
+		});
+	});
+});
+</script>
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+ })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-55737841-1', 'auto');
+ga('send', 'pageview');
+</script>
+ 
+</body>
+</html>
